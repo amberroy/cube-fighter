@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Cube Fighter</title>
+    <meta name="description" content="Cube Fighter">
+    <link rel="stylesheet" href="css/style.css"/>
+    <script src="libs/aframe-core.js"></script>
+    <!-- explode component from https://github.com/dmarcos/a-invaders -->
+    <script src="libs/explode.js"></script>
+  </head>
+  <body>
+    <div class="score">Score: 0</div>
+    <div class="screen title-screen">
+      <div class="title">Cube Fighter</div>
+      <div class="start blink">Click to Start</div>
+      <div class="instructions">
+        In VR: Look to move target reticle.<br>
+        Non-VR: Click-drag anywhere to aim.
+      </div>
+    </div>
+    <div class="screen end-screen">
+      <div class="end">All enemy cubes destroyed!</div>
+      <div class="end"><a href="http://www.cubefighter.io">www.CubeFighter.com</a></div>
+    </div>
+    <a-scene stats="false">
+      <a-assets>
+        <a-mixin id="cube"
+        geometry="primitive: box; height: 2; width: 2; depth: 2;"
+        material="color: red; roughness: 1.0; metalness: 0.2;">
+        </a-mixin>
+        <a-mixin id="enemy"
+        explode="on: hit">
+        </a-mixin>
+      </a-assets>
+
+      <!-- Camera with fuse cursor (pos: 0,0,-3.4 rad: 0.10/0.05) -->
+      <a-entity position="0 0 30">
+        <a-entity 
+          camera="far: 10000; fov: 45; near: 0.5;" look-controls="enabled: true">
+          <a-entity id="cursor" cursor="fuse: true; maxDistance: 500; timeout: 100;"
+          visible="true" position="0 0 -3.4"
+          geometry="primitive: ring; radiusOuter: 0.05; radiusInner: 0.025;"
+          material="color: yellow; shader: flat;">
+          <!-- changed fov from default 80 to 45, so half the radius too -->
+          </a-entity>
+        </a-entity>
+      </a-entity>
+
+      <!-- Enemies -->
+      <a-entity mixin="cube enemy" position="-17.5 4 0"> </a-entity>
+      <a-entity mixin="cube enemy" position="-14 -5 0"> </a-entity>
+      <a-entity mixin="cube enemy" position="-10.5 2.5 0"></a-entity>
+      <a-entity mixin="cube enemy" position="-7 5 0"></a-entity>
+      <a-entity mixin="cube enemy" position="-3.5 3 0"></a-entity>
+      <a-entity mixin="cube enemy" position="0 -3.5 0"></a-entity>
+      <a-entity mixin="cube enemy" position="3.5 1 0"></a-entity>
+      <a-entity mixin="cube enemy" position="7 5 0"></a-entity>
+      <a-entity mixin="cube enemy" position="10.5 -4 0"></a-entity>
+      <a-entity mixin="cube enemy" position="14 -2 0"></a-entity>
+      <a-entity mixin="cube enemy" position="17.5 5 0"></a-entity>
+
+    </a-scene>
+    <script>
+      var titleEl = document.querySelector('.title-screen');
+      var endEl = document.querySelector('.end-screen');
+      var enemies = document.querySelectorAll('[mixin="cube enemy"]');
+      var deadEnemies = [];
+      var scoreEl = document.querySelector('.score');
+      var score = 0;
+      var increaseCounter = function(e) {
+        var enemy = e.currentTarget;
+        if (deadEnemies.indexOf(enemy) != -1) { return; }
+        deadEnemies.push(enemy);
+        score+=1;
+        scoreEl.innerHTML = 'Score: ' + score;
+        if (enemies.length === deadEnemies.length) {
+          endEl.style.display = 'block';
+        }
+      }
+      titleEl.addEventListener('click', function() {
+        titleEl.style.display = 'none';
+      });
+      enemies = Array.prototype.slice.call(enemies);
+      enemies.forEach(function(enemyEl) {
+        enemyEl.addEventListener('click', function(e) {
+          console.log('clicked enemy!', e);
+          increaseCounter(e);
+          e.currentTarget.emit('hit');
+        });
+      });
+    </script>
+  </body>
+</html>
