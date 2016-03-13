@@ -21,7 +21,7 @@
     </div>
     <div class="screen end-screen">
       <div class="end">All enemy cubes destroyed!</div>
-      <div class="end"><a href="http://www.cubefighter.io">www.CubeFighter.com</a></div>
+      <div class="end"><a href="http://www.cubefighter.com">www.CubeFighter.com</a></div>
     </div>
     <a-scene stats="false">
       <a-assets>
@@ -60,6 +60,8 @@
       <a-entity mixin="cube enemy" position="14 -2 0"></a-entity>
       <a-entity mixin="cube enemy" position="17.5 5 0"></a-entity>
 
+      <a-sky color="black"></a-sky>
+
     </a-scene>
     <script>
       var titleEl = document.querySelector('.title-screen');
@@ -84,7 +86,6 @@
       enemies = Array.prototype.slice.call(enemies);
       enemies.forEach(function(enemyEl) {
         enemyEl.addEventListener('click', function(e) {
-          console.log('clicked enemy!', e);
           increaseCounter(e);
           e.currentTarget.emit('hit');
         });
