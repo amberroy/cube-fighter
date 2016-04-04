@@ -5,7 +5,7 @@ Your mission: destroy all the cubes, armed with nothing but your mighty gaze cur
 
 Short Link: [www.CubeFighter.com](http://www.cubefighter.com)
 
-![Cube Fighter screenshot](screenshot.png)
+![Cube Fighter screenshot](screenshot.jpg)
 
 How to run WebVR apps on Gear VR:
 1. Visit URL on your phone with Samsung Internet browser (from Google Play Store)
