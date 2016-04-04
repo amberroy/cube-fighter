@@ -1,97 +1,271 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>Cube Fighter</title>
-    <meta name="description" content="Cube Fighter">
-    <link rel="stylesheet" href="css/style.css"/>
-    <!-- from https://github.com/judax/OculusMobileSDKHeadTrackingWebVR -->
-    <script src="libs/OculusMobileSDKHeadTrackingWebVR.js"></script>
-    <script src="libs/aframe-core.js"></script>
-    <!-- explode component from https://github.com/dmarcos/a-invaders -->
-    <script src="libs/explode.js"></script>
-  </head>
-  <body>
-    <div class="score">Score: 0</div>
-    <div class="screen title-screen">
-      <div class="title">Cube Fighter</div>
-      <div class="start blink">Click to Start</div>
-      <div class="instructions">
-        In VR: Look to move target reticle.<br>
-        Non-VR: Click-drag anywhere to aim.
-      </div>
-    </div>
-    <div class="screen end-screen">
-      <div class="end">All enemy cubes destroyed!</div>
-      <div class="end"><a href="http://www.cubefighter.com">www.CubeFighter.com</a></div>
-    </div>
-    <a-scene stats="false">
-      <a-assets>
-        <a-mixin id="cube"
-        geometry="primitive: box; height: 2; width: 2; depth: 2;"
-        material="color: red; roughness: 1.0; metalness: 0.2;">
-        </a-mixin>
-        <a-mixin id="enemy"
-        explode="on: hit">
-        </a-mixin>
-      </a-assets>
+<html lang="en">
+	<head>
+		<title>Cube Fighter - A WebVR Game </title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Arial;
+				font-size: 24px;
+				background-color: #101010;
+				color: white;
+				margin: 0px;
+				overflow: hidden;
+			}
+			a {
+				color: #f00;
+			}
+			.title {
+	 			font-weight: bold;
+				font-size: 96px;
+				color: yellow; 
+				text-shadow:
+					1px 1px #FFD700,
+		            2px 2px #FFD700,
+		            3px 3px #FFD700;
+			}
+		</style>
+	</head>
+	<body>
 
-      <!-- Camera with fuse cursor (pos: 0,0,-3.4 rad: 0.10/0.05) -->
-      <a-entity position="0 0 30">
-        <a-entity 
-          camera="far: 10000; fov: 45; near: 0.5;" look-controls="enabled: true">
-          <a-entity id="cursor" cursor="fuse: true; maxDistance: 500; timeout: 100;"
-          visible="true" position="0 0 -3.4"
-          geometry="primitive: ring; radiusOuter: 0.05; radiusInner: 0.025;"
-          material="color: yellow; shader: flat;">
-          <!-- changed fov from default 80 to 45, so half the radius too -->
-          </a-entity>
-        </a-entity>
-      </a-entity>
+		<script src="libs/three.min.js"></script>
+		<script src="libs/WebVR.js"></script>
+		<script src="libs/VREffect.js"></script>
+		<script src="libs/VRControls.js"></script>
+		<script src="libs/Tween.js"></script>
+		<script src="libs/explode.js"></script>
 
-      <!-- Enemies -->
-      <a-entity mixin="cube enemy" position="-17.5 4 0"> </a-entity>
-      <a-entity mixin="cube enemy" position="-14 -5 0"> </a-entity>
-      <a-entity mixin="cube enemy" position="-10.5 2.5 0"></a-entity>
-      <a-entity mixin="cube enemy" position="-7 5 0"></a-entity>
-      <a-entity mixin="cube enemy" position="-3.5 3 0"></a-entity>
-      <a-entity mixin="cube enemy" position="0 -3.5 0"></a-entity>
-      <a-entity mixin="cube enemy" position="3.5 1 0"></a-entity>
-      <a-entity mixin="cube enemy" position="7 5 0"></a-entity>
-      <a-entity mixin="cube enemy" position="10.5 -4 0"></a-entity>
-      <a-entity mixin="cube enemy" position="14 -2 0"></a-entity>
-      <a-entity mixin="cube enemy" position="17.5 5 0"></a-entity>
+		<script>
 
-      <a-sky color="black"></a-sky>
+			if ( WEBVR.isLatestAvailable() === false ) {
 
-    </a-scene>
-    <script>
-      var titleEl = document.querySelector('.title-screen');
-      var endEl = document.querySelector('.end-screen');
-      var enemies = document.querySelectorAll('[mixin="cube enemy"]');
-      var deadEnemies = [];
-      var scoreEl = document.querySelector('.score');
-      var score = 0;
-      var increaseCounter = function(e) {
-        var enemy = e.currentTarget;
-        if (deadEnemies.indexOf(enemy) != -1) { return; }
-        deadEnemies.push(enemy);
-        score+=1;
-        scoreEl.innerHTML = 'Score: ' + score;
-        if (enemies.length === deadEnemies.length) {
-          endEl.style.display = 'block';
-        }
-      }
-      titleEl.addEventListener('click', function() {
-        titleEl.style.display = 'none';
-      });
-      enemies = Array.prototype.slice.call(enemies);
-      enemies.forEach(function(enemyEl) {
-        enemyEl.addEventListener('click', function(e) {
-          increaseCounter(e);
-          e.currentTarget.emit('hit');
-        });
-      });
-    </script>
-  </body>
+				document.body.appendChild( WEBVR.getMessage() );
+
+			}
+
+			// added config, TWEEN, isMoving, cubesDestroyed, victory effect
+			var config = {x: 300, y: 100, z: 300, radius: 150, cubeCount: 50 };
+			var arenaMesh;
+			var cubesDestroyed = 0;
+			var sounds = {};
+
+			var container;
+			var camera, scene, raycaster, renderer;
+			var effect, controls;
+
+			var cubes = [];
+			var INTERSECTED;
+			var crosshair;
+
+			init();
+			animate();
+
+			function init() {
+
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				var info = document.createElement( 'div' );
+				info.style.position = 'absolute';
+				info.style.top = '200px';
+				info.style.width = '100%';
+				info.style.textAlign = 'center';
+				info.classList.add('title');
+				info.innerHTML = 'Cube Fighter';
+				container.appendChild( info );
+
+				scene = new THREE.Scene();
+
+				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 1000 );
+				scene.add( camera );
+
+				crosshair = new THREE.Mesh(
+					new THREE.RingGeometry( 0.02, 0.04, 32 ),
+					new THREE.MeshBasicMaterial( {
+						color: 0xffffff,
+						opacity: 0.5,
+						transparent: true
+					} )
+				);
+				crosshair.position.z = - 2;
+				camera.add( crosshair );
+
+				arenaMesh = new THREE.Mesh(
+					new THREE.IcosahedronGeometry( config.radius, 2 ), // 20 sides
+					new THREE.MeshBasicMaterial( { color: 0x202020, wireframe: true } )
+				);
+				scene.add( arenaMesh );
+
+				scene.add( new THREE.HemisphereLight( 0x404020, 0x202040, 0.5 ) );
+
+				var light = new THREE.DirectionalLight( 0xffffff );
+				light.position.set( 1, 1, 1 ).normalize();
+				scene.add( light );
+
+				var boxGeometry = new THREE.BoxGeometry( 8, 8, 8 );
+
+				for ( var i = 0; i < config.cubeCount; i ++ ) {
+
+					var object = new THREE.Mesh( boxGeometry, new THREE.MeshLambertMaterial( { color: Math.random() * 0xffffff } ) );
+
+					var r = config.radius;
+					object.position.x = Math.random() * ( 2 * r ) - r;
+					object.position.y = Math.random() * ( 2 * r ) - r;
+					object.position.z = Math.random() * r * -1;//in front of player
+
+					object.rotation.x = Math.random() * 2 * Math.PI;
+					object.rotation.y = Math.random() * 2 * Math.PI;
+					object.rotation.z = Math.random() * 2 * Math.PI;
+
+					object.scale.x = object.scale.y = object.scale.z = Math.random() + 0.5;
+
+					object.userData.velocity = new THREE.Vector3();
+					object.userData.velocity.x = Math.random() * 0.4 - 0.2;
+					object.userData.velocity.y = Math.random() * 0.4 - 0.2;
+					object.userData.velocity.z = Math.random() * 0.4 - 0.2;
+
+					object.userData.isMoving = true;
+
+					scene.add( object );
+					cubes.push( object );
+
+					scene.add( object );
+					var edges = new THREE.EdgesHelper( object, 0xffffff );
+					edges.material.linewidth = 2;
+					scene.add( edges );
+
+				}
+
+				raycaster = new THREE.Raycaster();
+
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setClearColor( 0x101010 );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.sortObjects = false;
+				container.appendChild( renderer.domElement );
+
+				controls = new THREE.VRControls( camera );
+				effect = new THREE.VREffect( renderer );
+
+				if ( WEBVR.isAvailable() === true ) {
+
+					document.body.appendChild( WEBVR.getButton( effect ) );
+
+				}
+
+				//
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+				// Load sound effect. Chromium doesn't support mp3 so include wav too.
+				var ext = (new Audio()).canPlayType('audio/mpeg') ? ".mp3" : ".wav";
+				sounds.explode = new Audio('sounds/164103__bmaczero__explode' + ext)
+				sounds.victory = new Audio('sounds/269198__mickleness__game-win' + ext)
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				effect.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			//
+
+			function animate(time) {
+
+				requestAnimationFrame( animate );
+				render(time);
+
+			}
+
+			function render(time) {
+
+				// find intersections
+
+				raycaster.setFromCamera( { x: 0, y: 0 }, camera );
+
+				var intersects = raycaster.intersectObjects( cubes );
+
+				if ( intersects.length > 0 ) {
+
+					if ( INTERSECTED != intersects[ 0 ].object ) {
+
+						if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
+
+						INTERSECTED = intersects[ 0 ].object;
+						INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
+						if ( INTERSECTED.userData.isMoving ) {
+							explode = Explode( scene, INTERSECTED );
+							INTERSECTED.userData.isMoving = false;
+							cubesDestroyed += 1;
+							if (cubesDestroyed === config.cubeCount ) {
+							    arenaMesh.material.color = new THREE.Color('gold');
+							    arenaMesh.material.needsUpdate = true;
+							    sounds.victory.play();
+							} else {
+								sounds.explode.play();
+							}
+						}
+
+					}
+
+				} else {
+
+					if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
+
+					INTERSECTED = null;
+
+				}
+
+				controls.update();
+				TWEEN.update(time);
+
+				for ( var i = 0; i < cubes.length; i ++ ) {
+
+					var cube = cubes[ i ];
+
+					if (!cube.userData.isMoving) continue;
+
+					cube.position.add( cube.userData.velocity );
+
+					var limitX = config.radius;
+					if ( cube.position.x < - limitX || cube.position.x > limitX ) {
+
+						cube.position.x = THREE.Math.clamp( cube.position.x, - limitX, limitX );
+						cube.userData.velocity.x = - cube.userData.velocity.x;
+
+					}
+
+					var limitY = config.radius;
+					if ( cube.position.y < - limitY || cube.position.y > limitY ) {
+
+						cube.position.y = THREE.Math.clamp( cube.position.y, - limitY, limitY );
+						cube.userData.velocity.y = - cube.userData.velocity.y;
+
+					}
+
+					var limitZ = config.radius;
+					if ( cube.position.z < 0 || cube.position.z > limitZ ) {
+
+						cube.position.z = THREE.Math.clamp( cube.position.z, - limitZ, 0 );
+						cube.userData.velocity.z = - cube.userData.velocity.z;
+
+					}
+
+					cube.rotation.x += 0.01;
+
+				}
+
+				effect.render( scene, camera );
+
+			}
+
+		</script>
+	</body>
 </html>

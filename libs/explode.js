@@ -1,6 +1,32 @@
-AFRAME.registerComponent('explode', {
-  schema: { on: { default: ''} },
+//AFRAME.registerComponent('explode', {
+//  schema: { on: { default: ''} },
+Explode = function(scene, object3D) {
 
+  if ( object3D instanceof THREE.Group ) {
+    console.log('converting', object3D);
+    if ( object3D.children && object3D.children.length === 1 &&
+        object3D.children[0] instanceof THREE.Mesh ) {
+      object3D = object3D.children[0];
+    } else {
+      console.warn('Cannot explode THREE.Group', object3D);
+      return;
+    }
+
+  }
+
+  if ( object3D.geometry instanceof THREE.BufferGeometry ) {
+    console.log('converting bufferGeometry...', object3D);
+    var geometry = new THREE.Geometry().fromBufferGeometry( object3D.geometry );
+    object3D.geometry = geometry;
+    console.log('done');
+  }
+
+  if ( object3D.geometry instanceof THREE.BufferGeometry ) {
+    console.warn('Must convert BufferGeometry to Geometry before exploding', object3D);
+    return;
+  }
+
+  /*
   update: function (previousData) {
     var el = this.el;
     var explode = this.handler = this.explode.bind(this);
@@ -9,10 +35,11 @@ AFRAME.registerComponent('explode', {
     }
     el.addEventListener(this.data.on, explode);
   },
+  */
 
-  explode: function () {
-    var object3D = this.el.getObject3D('mesh');
-    var scene = this.el.sceneEl.object3D;
+  //explodeBox: function (scene, object3D) {
+    //var object3D = this.el.getObject3D('mesh');
+    //var scene = this.el.sceneEl.object3D;
     var duration = 8000;
 
     // explode geometry into objects
@@ -53,7 +80,7 @@ AFRAME.registerComponent('explode', {
     }
 
     object3D.add(pieces);
-    this.el.removeEventListener(this.data.on, this.handler);
+    //this.el.removeEventListener(this.data.on, this.handler);
 
     function explode( geometry, material ) {
       var pieces = new THREE.Group();
@@ -94,6 +121,4 @@ AFRAME.registerComponent('explode', {
         }
       }
     }
-
-  }
-});
+};
