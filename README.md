@@ -8,6 +8,7 @@ Short Link: [www.CubeFighter.com](http://www.cubefighter.com)
 ![Cube Fighter screenshot](screenshot.jpg)
 
 How to run WebVR apps on Gear VR:
+
 1. Visit URL on your phone with Samsung Internet browser (from Google Play Store)
 2. Place phone in your Gear VR to launch Samsung Internet (from Oculus Home Store)
     - one-time setup: visit internet://webvr-enable
