@@ -3,8 +3,6 @@ Your mission: destroy all the cubes, armed with nothing but your mighty gaze cur
 
 **Play Online**: https://amberroy.github.io/cube-fighter/
 
-Short Link: [www.CubeFighter.com](http://www.cubefighter.com)
-
 ![Cube Fighter screenshot](screenshot.jpg)
 
 How to run WebVR apps on Gear VR:
