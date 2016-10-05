@@ -35,10 +35,11 @@
 		<script src="libs/VRControls.js"></script>
 		<script src="libs/Tween.js"></script>
 		<script src="libs/explode.js"></script>
+		<script src="libs/webvr-polyfill.js"></script>
 
 		<script>
 
-			if ( WEBVR.isLatestAvailable() === false ) {
+			if ( WEBVR.isAvailable() === false ) {
 
 				document.body.appendChild( WEBVR.getMessage() );
 
