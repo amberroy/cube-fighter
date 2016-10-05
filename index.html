@@ -131,9 +131,10 @@
 					cubes.push( object );
 
 					scene.add( object );
-					var edges = new THREE.EdgesHelper( object, 0xffffff );
-					edges.material.linewidth = 2;
-					scene.add( edges );
+					var edges = new THREE.EdgesGeometry( boxGeometry );
+					var lines = new THREE.LineSegments( edges );
+					lines.material.color = new THREE.Color('white');
+					object.add( lines );
 
 				}
 

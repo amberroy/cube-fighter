@@ -1,5 +1,4 @@
-//AFRAME.registerComponent('explode', {
-//  schema: { on: { default: ''} },
+// Based on explode.js component for A-Frame https://github.com/dmarcos/a-invaders
 Explode = function(scene, object3D) {
 
   if ( object3D instanceof THREE.Group ) {
@@ -26,20 +25,6 @@ Explode = function(scene, object3D) {
     return;
   }
 
-  /*
-  update: function (previousData) {
-    var el = this.el;
-    var explode = this.handler = this.explode.bind(this);
-    if (previousData) {
-      el.removeEventListener(previousData.on, explode);
-    }
-    el.addEventListener(this.data.on, explode);
-  },
-  */
-
-  //explodeBox: function (scene, object3D) {
-    //var object3D = this.el.getObject3D('mesh');
-    //var scene = this.el.sceneEl.object3D;
     var duration = 8000;
 
     // explode geometry into objects
@@ -80,7 +65,6 @@ Explode = function(scene, object3D) {
     }
 
     object3D.add(pieces);
-    //this.el.removeEventListener(this.data.on, this.handler);
 
     function explode( geometry, material ) {
       var pieces = new THREE.Group();
