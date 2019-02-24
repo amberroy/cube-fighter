@@ -19,7 +19,7 @@
 			.title {
 	 			font-weight: bold;
 				font-size: 96px;
-				color: yellow; 
+				color: yellow;
 				text-shadow:
 					1px 1px #FFD700,
 		            2px 2px #FFD700,
@@ -31,29 +31,26 @@
 
 		<script src="libs/three.min.js"></script>
 		<script src="libs/WebVR.js"></script>
-		<script src="libs/VREffect.js"></script>
-		<script src="libs/VRControls.js"></script>
 		<script src="libs/Tween.js"></script>
 		<script src="libs/explode.js"></script>
+		<!-- deprecated
+		<script src="libs/VREffect.js"></script>
+		<script src="libs/VRControls.js"></script>
 		<script src="libs/webvr-polyfill.js"></script>
+		-->
 
 		<script>
-
-			if ( WEBVR.isAvailable() === false ) {
-
-				document.body.appendChild( WEBVR.getMessage() );
-
-			}
 
 			// added config, TWEEN, isMoving, cubesDestroyed, victory effect
 			var config = {x: 300, y: 100, z: 300, radius: 150, cubeCount: 50 };
 			var arenaMesh;
 			var cubesDestroyed = 0;
 			var sounds = {};
+			var isAudioEnabled = false;
 
+			var clock = new THREE.Clock();
 			var container;
 			var camera, scene, raycaster, renderer;
-			var effect, controls;
 
 			var cubes = [];
 			var INTERSECTED;
@@ -146,18 +143,17 @@
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				renderer.sortObjects = false;
+				renderer.vr.enabled = true;
 				container.appendChild( renderer.domElement );
 
-				controls = new THREE.VRControls( camera );
-				effect = new THREE.VREffect( renderer );
-
-				if ( WEBVR.isAvailable() === true ) {
-
-					document.body.appendChild( WEBVR.getButton( effect ) );
-
-				}
-
-				//
+				var button = WEBVR.createButton(renderer);
+				button.addEventListener('click', function() {
+					// Web audio now requires a user gesture, so play something on the
+					// first click to enable sounds for the rest of the session.
+					sounds.victory.play();
+			    isAudioEnabled = true;
+				});
+				document.body.appendChild(button);
 
 				window.addEventListener( 'resize', onWindowResize, false );
 
@@ -173,20 +169,17 @@
 				camera.aspect = window.innerWidth / window.innerHeight;
 				camera.updateProjectionMatrix();
 
-				effect.setSize( window.innerWidth, window.innerHeight );
+			}
+
+			function animate() {
+
+				renderer.setAnimationLoop(render);
 
 			}
 
-			//
+			function render() {
 
-			function animate(time) {
-
-				requestAnimationFrame( animate );
-				render(time);
-
-			}
-
-			function render(time) {
+				var time = clock.getElapsedTime() * 1000;
 
 				// find intersections
 
@@ -209,9 +202,9 @@
 							if (cubesDestroyed === config.cubeCount ) {
 							    arenaMesh.material.color = new THREE.Color('gold');
 							    arenaMesh.material.needsUpdate = true;
-							    sounds.victory.play();
+									isAudioEnabled && sounds.victory.play();
 							} else {
-								sounds.explode.play();
+								isAudioEnabled && sounds.explode.play();
 							}
 						}
 
@@ -225,7 +218,6 @@
 
 				}
 
-				controls.update();
 				TWEEN.update(time);
 
 				for ( var i = 0; i < cubes.length; i ++ ) {
@@ -264,7 +256,7 @@
 
 				}
 
-				effect.render( scene, camera );
+				renderer.render( scene, camera );
 
 			}
 
