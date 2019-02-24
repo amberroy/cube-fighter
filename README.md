@@ -1,5 +1,7 @@
 ## Cube Fighter - A WebVR Game
-Your mission: destroy all the cubes, armed with nothing but your mighty gaze cursor. Currently only one level, but position of cubes is randomly generated if you want to replay. AFAIK this was the World's First WebVR Game built for Gear VR in 2016, now upgraded to run on Oculus Go, just visit https://cubefighter.com in Oculus Browser.
+Your mission: destroy all the cubes, armed with nothing but your mighty gaze cursor.
+
+Currently only one level, but position of cubes is randomly generated if you want to replay. AFAIK this was the World's First WebVR Game built for Gear VR in 2016, now upgraded to run on Oculus Go, just visit https://cubefighter.com in Oculus Browser.
 
 ![Cube Fighter screenshot](screenshot.jpg)
 

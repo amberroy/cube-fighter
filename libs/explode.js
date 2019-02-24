@@ -40,7 +40,6 @@ Explode = function(scene, object3D) {
       object.geometry.computeFaceNormals();
       var normal = object.geometry.faces[0].normal.clone();
       var targetPosition = object.position.clone().add(normal.multiplyScalar(300));
-      //removeBoxFromList( object3D );
       new TWEEN.Tween( object.position )
         .to( targetPosition, duration )
         .onComplete( deleteBox )
@@ -96,13 +95,4 @@ Explode = function(scene, object3D) {
       return pieces;
     }
 
-    function removeBoxFromList( box ) {
-      var objects = scene.children;
-      for (var i = 0; i < objects.length; i++) {
-        if (objects[i] === box) {
-          objects.splice(i, 1);
-          return;
-        }
-      }
-    }
 };
