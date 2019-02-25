@@ -36,165 +36,144 @@
 
 		<script>
 
-			// added config, TWEEN, isMoving, cubesDestroyed, victory effect
-			var config = {x: 300, y: 100, z: 300, radius: 150, cubeCount: 50 };
-			var arenaMesh;
-			var cubesDestroyed = 0;
-			var sounds = {};
-			var isAudioEnabled = false;
-
+			// scene objects
+			var camera, container, crosshair, scene, raycaster, renderer;
 			var clock = new THREE.Clock();
-			var container;
-			var camera, scene, raycaster, renderer;
+			var isAudioEnabled = false;
+			var sounds = {};
 
+			// game objects
+			var arenaMesh;
+			var config = {x: 300, y: 100, z: 300, radius: 150, cubeCount: 50 };
 			var cubes = [];
+			var cubesDestroyed = 0;
 			var INTERSECTED;
-			var crosshair;
 
 			init();
 			animate();
 
 			function init() {
+				// init page
+				container = document.createElement('div');
+				document.body.appendChild(container);
 
-				container = document.createElement( 'div' );
-				document.body.appendChild( container );
-
-				var info = document.createElement( 'div' );
+				var info = document.createElement('div');
 				info.style.position = 'absolute';
 				info.style.top = '200px';
 				info.style.width = '100%';
 				info.style.textAlign = 'center';
 				info.classList.add('title');
 				info.innerHTML = 'Cube Fighter';
-				container.appendChild( info );
+				container.appendChild(info);
 
+				// init renderer
+				raycaster = new THREE.Raycaster();
+				renderer = new THREE.WebGLRenderer({antialias: true});
+				renderer.setClearColor(0x101010);
+				renderer.setPixelRatio(window.devicePixelRatio);
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				renderer.sortObjects = false;
+				renderer.vr.enabled = true;
+				container.appendChild(renderer.domElement);
+
+				// init scene
 				scene = new THREE.Scene();
-
-				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 1000 );
-				scene.add( camera );
-
+				camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+				scene.add(camera);
 				crosshair = new THREE.Mesh(
-					new THREE.RingGeometry( 0.02, 0.04, 32 ),
-					new THREE.MeshBasicMaterial( {
+					new THREE.RingGeometry(0.02, 0.04, 32),
+					new THREE.MeshBasicMaterial({
 						color: 0xffffff,
 						opacity: 0.5,
 						transparent: true
-					} )
+					})
 				);
 				crosshair.position.z = - 2;
-				camera.add( crosshair );
+				camera.add(crosshair);
+				scene.add(new THREE.HemisphereLight(0x404020, 0x202040, 0.5));
+				var light = new THREE.DirectionalLight(0xffffff);
+				light.position.set(1, 1, 1).normalize();
+				scene.add(light);
 
+				// Add the Enter VR button.
+				var button = WEBVR.createButton(renderer);
+				button.addEventListener('click', function() {
+					// Web audio now requires a user gesture, so play something on the
+					// first click to enable sounds for the rest of the session.
+					sounds.start.play();
+			    isAudioEnabled = true;
+				});
+				document.body.appendChild(button);
+				window.addEventListener('resize', onWindowResize, false);
+
+				// Add outer boundary of the play area. Keep the cubes inside.
 				arenaMesh = new THREE.Mesh(
-					new THREE.IcosahedronGeometry( config.radius, 2 ), // 20 sides
-					new THREE.MeshBasicMaterial( { color: 0x202020, wireframe: true } )
+					new THREE.IcosahedronGeometry(config.radius, 2), // 20 sides
+					new THREE.MeshBasicMaterial({color: 0x202020, wireframe: true})
 				);
-				scene.add( arenaMesh );
+				scene.add(arenaMesh);
 
-				scene.add( new THREE.HemisphereLight( 0x404020, 0x202040, 0.5 ) );
-
-				var light = new THREE.DirectionalLight( 0xffffff );
-				light.position.set( 1, 1, 1 ).normalize();
-				scene.add( light );
-
-				var boxGeometry = new THREE.BoxGeometry( 8, 8, 8 );
-
-				for ( var i = 0; i < config.cubeCount; i ++ ) {
-
-					var object = new THREE.Mesh( boxGeometry, new THREE.MeshLambertMaterial( { color: Math.random() * 0xffffff } ) );
-
+				// Add cubes to the scene.
+				var boxGeometry = new THREE.BoxGeometry(8, 8, 8);
+				for (var i = 0; i < config.cubeCount; i ++) {
+					var object = new THREE.Mesh(boxGeometry, new THREE.MeshLambertMaterial({color: Math.random() * 0xffffff}));
 					var r = config.radius;
-					object.position.x = Math.random() * ( 2 * r ) - r;
-					object.position.y = Math.random() * ( 2 * r ) - r;
-					object.position.z = Math.random() * r * -1;//in front of player
-
+					object.position.x = Math.random() * (2 * r) - r;
+					object.position.y = Math.random() * (2 * r) - r;
+					object.position.z = Math.random() * r * -1; // keep cubes in front of player
 					object.rotation.x = Math.random() * 2 * Math.PI;
 					object.rotation.y = Math.random() * 2 * Math.PI;
 					object.rotation.z = Math.random() * 2 * Math.PI;
-
 					object.scale.x = object.scale.y = object.scale.z = Math.random() + 0.5;
 
 					object.userData.velocity = new THREE.Vector3();
 					object.userData.velocity.x = Math.random() * 0.4 - 0.2;
 					object.userData.velocity.y = Math.random() * 0.4 - 0.2;
 					object.userData.velocity.z = Math.random() * 0.4 - 0.2;
-
 					object.userData.isMoving = true;
 
-					scene.add( object );
-					cubes.push( object );
+					scene.add(object);
+					cubes.push(object);
 
-					scene.add( object );
-					var edges = new THREE.EdgesGeometry( boxGeometry );
-					var lines = new THREE.LineSegments( edges );
+					scene.add(object);
+					var edges = new THREE.EdgesGeometry(boxGeometry);
+					var lines = new THREE.LineSegments(edges);
 					lines.material.color = new THREE.Color('white');
-					object.add( lines );
-
+					object.add(lines);
 				}
-
-				raycaster = new THREE.Raycaster();
-
-				renderer = new THREE.WebGLRenderer( { antialias: true } );
-				renderer.setClearColor( 0x101010 );
-				renderer.setPixelRatio( window.devicePixelRatio );
-				renderer.setSize( window.innerWidth, window.innerHeight );
-				renderer.sortObjects = false;
-				renderer.vr.enabled = true;
-				container.appendChild( renderer.domElement );
-
-				var button = WEBVR.createButton(renderer);
-				button.addEventListener('click', function() {
-					// Web audio now requires a user gesture, so play something on the
-					// first click to enable sounds for the rest of the session.
-					sounds.victory.play();
-			    isAudioEnabled = true;
-				});
-				document.body.appendChild(button);
-
-				window.addEventListener( 'resize', onWindowResize, false );
 
 				// Load sound effect. Chromium doesn't support mp3 so include wav too.
 				var ext = (new Audio()).canPlayType('audio/mpeg') ? ".mp3" : ".wav";
 				sounds.explode = new Audio('sounds/164103__bmaczero__explode' + ext)
+				sounds.start = new Audio('sounds/243020__plasterbrain__game-start' + ext)
 				sounds.victory = new Audio('sounds/269198__mickleness__game-win' + ext)
-
 			}
 
 			function onWindowResize() {
-
 				camera.aspect = window.innerWidth / window.innerHeight;
 				camera.updateProjectionMatrix();
-
 			}
 
 			function animate() {
-
 				renderer.setAnimationLoop(render);
-
 			}
 
 			function render() {
-
 				var time = clock.getElapsedTime() * 1000;
-
-				// find intersections
-
-				raycaster.setFromCamera( { x: 0, y: 0 }, camera );
-
-				var intersects = raycaster.intersectObjects( cubes );
-
-				if ( intersects.length > 0 ) {
-
-					if ( INTERSECTED != intersects[ 0 ].object ) {
-
-						if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
-
-						INTERSECTED = intersects[ 0 ].object;
-						INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
-						if ( INTERSECTED.userData.isMoving ) {
-							explode = Explode( scene, INTERSECTED );
+				// Find intersections.
+				raycaster.setFromCamera({x: 0, y: 0}, camera);
+				var intersects = raycaster.intersectObjects(cubes);
+				if (intersects.length > 0) {
+			    // INTERSECTED is the cube currently under the crosshair, or null if none.
+					if (INTERSECTED != intersects[0].object) {
+						INTERSECTED = intersects[0].object;
+						if (INTERSECTED.userData.isMoving) {
+							// New cube in the crosshairs. Destroy it!
+							EXPLODE(scene, INTERSECTED);
 							INTERSECTED.userData.isMoving = false;
 							cubesDestroyed += 1;
-							if (cubesDestroyed === config.cubeCount ) {
+							if (cubesDestroyed === config.cubeCount) {
+									// All cubes destroyed. Victory!
 							    arenaMesh.material.color = new THREE.Color('gold');
 							    arenaMesh.material.needsUpdate = true;
 									isAudioEnabled && sounds.victory.play();
@@ -202,57 +181,44 @@
 								isAudioEnabled && sounds.explode.play();
 							}
 						}
-
 					}
-
 				} else {
-
-					if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
-
 					INTERSECTED = null;
-
 				}
 
-				TWEEN.update(time);
-
-				for ( var i = 0; i < cubes.length; i ++ ) {
-
-					var cube = cubes[ i ];
-
+				// Update cube locations.
+				for (var i = 0; i < cubes.length; i ++) {
+					var cube = cubes[i];
+					// Skip destoryed cubes that haven't been removed from the scene.
 					if (!cube.userData.isMoving) continue;
+					// Move cube along it's current direction vector.
+					cube.position.add(cube.userData.velocity);
+					// Spin the cube along one dimension.
+					cube.rotation.x += 0.01;
 
-					cube.position.add( cube.userData.velocity );
-
+					// If cube is beyond the play area boundary, reverse its direction.
 					var limitX = config.radius;
-					if ( cube.position.x < - limitX || cube.position.x > limitX ) {
-
-						cube.position.x = THREE.Math.clamp( cube.position.x, - limitX, limitX );
+					if (cube.position.x < - limitX || cube.position.x > limitX) {
+						cube.position.x = THREE.Math.clamp(cube.position.x, - limitX, limitX);
 						cube.userData.velocity.x = - cube.userData.velocity.x;
-
 					}
 
 					var limitY = config.radius;
-					if ( cube.position.y < - limitY || cube.position.y > limitY ) {
-
-						cube.position.y = THREE.Math.clamp( cube.position.y, - limitY, limitY );
+					if (cube.position.y < - limitY || cube.position.y > limitY) {
+						cube.position.y = THREE.Math.clamp(cube.position.y, - limitY, limitY);
 						cube.userData.velocity.y = - cube.userData.velocity.y;
-
 					}
 
 					var limitZ = config.radius;
-					if ( cube.position.z < 0 || cube.position.z > limitZ ) {
-
-						cube.position.z = THREE.Math.clamp( cube.position.z, - limitZ, 0 );
+					if (cube.position.z < 0 || cube.position.z > limitZ) {
+						cube.position.z = THREE.Math.clamp(cube.position.z, - limitZ, 0);
 						cube.userData.velocity.z = - cube.userData.velocity.z;
-
 					}
-
-					cube.rotation.x += 0.01;
-
 				}
 
-				renderer.render( scene, camera );
-
+				// Tick animations and render the scene.
+				TWEEN.update(time);
+				renderer.render(scene, camera);
 			}
 
 		</script>
