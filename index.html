@@ -31,7 +31,7 @@
 
 		<script src="libs/three.min.js"></script>
 		<script src="libs/WebVR.js"></script>
-		<script src="libs/Tween.js"></script>
+		<script src="libs/Tween.min.js"></script>
 		<script src="libs/explode.js"></script>
 
 		<script>
@@ -130,7 +130,7 @@
 					object.userData.velocity.x = Math.random() * 0.4 - 0.2;
 					object.userData.velocity.y = Math.random() * 0.4 - 0.2;
 					object.userData.velocity.z = Math.random() * 0.4 - 0.2;
-					object.userData.isMoving = true;
+					object.userData.isDestroyed = false;
 
 					scene.add(object);
 					cubes.push(object);
@@ -160,27 +160,24 @@
 
 			function render() {
 				var time = clock.getElapsedTime() * 1000;
+				TWEEN.update(time);
 				// Find intersections.
 				raycaster.setFromCamera({x: 0, y: 0}, camera);
 				var intersects = raycaster.intersectObjects(cubes);
-				if (intersects.length > 0) {
+				if (intersects.length > 0 && INTERSECTED != intersects[0].object &&
+					  !intersects[0].object.userData.isDestroyed) {
 			    // INTERSECTED is the cube currently under the crosshair, or null if none.
-					if (INTERSECTED != intersects[0].object) {
-						INTERSECTED = intersects[0].object;
-						if (INTERSECTED.userData.isMoving) {
-							// New cube in the crosshairs. Destroy it!
-							EXPLODE(scene, INTERSECTED);
-							INTERSECTED.userData.isMoving = false;
-							cubesDestroyed += 1;
-							if (cubesDestroyed === config.cubeCount) {
-									// All cubes destroyed. Victory!
-							    arenaMesh.material.color = new THREE.Color('gold');
-							    arenaMesh.material.needsUpdate = true;
-									isAudioEnabled && sounds.victory.play();
-							} else {
-								isAudioEnabled && sounds.explode.play();
-							}
-						}
+				  INTERSECTED = intersects[0].object;
+					INTERSECTED.userData.isDestroyed = true;
+					EXPLODE(scene, INTERSECTED);
+					cubesDestroyed += 1;
+					if (cubesDestroyed !== config.cubeCount) {
+						isAudioEnabled && sounds.explode.play();
+					} else {
+			  		// All cubes destroyed. Victory!
+			      arenaMesh.material.color = new THREE.Color('gold');
+				    arenaMesh.material.needsUpdate = true;
+					  isAudioEnabled && sounds.victory.play();
 					}
 				} else {
 					INTERSECTED = null;
@@ -189,8 +186,8 @@
 				// Update cube locations.
 				for (var i = 0; i < cubes.length; i ++) {
 					var cube = cubes[i];
-					// Skip destoryed cubes that haven't been removed from the scene.
-					if (!cube.userData.isMoving) continue;
+					// Skip destroyed cubes that haven't been removed from the scene.
+					if (cube.userData.isDestroyed) continue;
 					// Move cube along it's current direction vector.
 					cube.position.add(cube.userData.velocity);
 					// Spin the cube along one dimension.
@@ -215,9 +212,7 @@
 						cube.userData.velocity.z = - cube.userData.velocity.z;
 					}
 				}
-
-				// Tick animations and render the scene.
-				TWEEN.update(time);
+				// Done with updates, now render the scene.
 				renderer.render(scene, camera);
 			}
 

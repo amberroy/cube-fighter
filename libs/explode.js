@@ -53,8 +53,8 @@ EXPLODE = function(scene, object3D) {
         .to({opacity: 1}, duration)
         .start();
 
-      var rotation = 2 * Math.PI;
-      var targetRotation = { x: rotation, y: rotation, z:rotation };
+      var rotation = Math.PI / 2;
+      var targetRotation = { x: rotation, y: rotation, z: rotation };
       new TWEEN.Tween(object.rotation)
         .to(targetRotation, duration)
         .start();
